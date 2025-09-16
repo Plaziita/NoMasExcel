@@ -1,5 +1,6 @@
 // src/app/components/login/login.component.ts
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService } from '../../services/userService/user';
 import { CommonModule } from '@angular/common';
@@ -11,13 +12,25 @@ import { Role, User } from '../../models/User';
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
+  ngOnInit(): void {
+    this.userService.checkSession().subscribe({
+      next: (res) => {
+        if (res && res.authenticated) {
+          this.router.navigate(['/home']);
+        }
+      },
+      error: () => {},
+    });
+  }
   authForm!: FormGroup;
   isLoginMode = true;
   successMessage = '';
   errorMessage = '';
 
-  constructor(private fb: FormBuilder, private userService: UserService) {
+  showPopup = false;
+
+  constructor(private fb: FormBuilder, private userService: UserService, private router: Router) {
     this.initForm();
   }
 
@@ -53,7 +66,11 @@ export class LoginComponent {
     if (this.isLoginMode) {
       // Login
       this.userService.login(formValue).subscribe({
-        next: (user) => (this.successMessage = `Bienvenido ${user.name}`),
+        next: (user) => {
+          // Guardar bandera de login exitoso para mostrar popup en home
+          localStorage.setItem('showLoginPopup', '1');
+          this.router.navigate(['/home']);
+        },
         error: (err) => (this.errorMessage = 'Usuario o contraseña incorrectos'),
       });
     } else {

@@ -1,0 +1,99 @@
+<mat-sidenav-container class="dashboard-container">
+  <mat-sidenav #sidenav mode="side" opened class="dashboard-sidenav">
+    <mat-toolbar color="primary">NoMasExcel</mat-toolbar>
+    <mat-nav-list>
+      <a
+        mat-list-item
+        [ngClass]="{ 'active-section': selectedSection === 'user' }"
+        (click)="selectedSection = 'user'"
+      >
+        <mat-icon>person</mat-icon> Usuario
+      </a>
+      <a
+        mat-list-item
+        [ngClass]="{ 'active-section': selectedSection === 'expenses' }"
+        (click)="selectedSection = 'expenses'"
+      >
+        <mat-icon>table_chart</mat-icon> Gastos
+      </a>
+      <a
+        mat-list-item
+        [ngClass]="{ 'active-section': selectedSection === 'summary' }"
+        (click)="selectedSection = 'summary'"
+      >
+        <mat-icon>assessment</mat-icon> Resumen
+      </a>
+      <a mat-list-item (click)="logout()"> <mat-icon>logout</mat-icon> Logout </a>
+    </mat-nav-list>
+  </mat-sidenav>
+  <mat-sidenav-content>
+    <mat-toolbar color="primary">
+      <button mat-icon-button (click)="sidenav.toggle()" class="hide-desktop">
+        <mat-icon>menu</mat-icon>
+      </button>
+  <span class="dashboard-title">Bienvenido, {{ (user$ | async)?.name || '' }}</span>
+      <span class="spacer"></span>
+      <button mat-icon-button (click)="logout()"><mat-icon>logout</mat-icon></button>
+    </mat-toolbar>
+    <div class="dashboard-content">
+      <!-- Apartado Usuario -->
+      <div *ngIf="selectedSection === 'user'">
+        <mat-card>
+          <mat-card-title>Datos del Usuario</mat-card-title>
+          <mat-card-content>
+            <ng-container *ngIf="user$ | async as user; else noUser">
+              <div><strong>Nombre:</strong> {{ user.name }}</div>
+              <div><strong>Email:</strong> {{ user.email }}</div>
+              <div><strong>Rol:</strong> {{ user.rol }}</div>
+            </ng-container>
+            <ng-template #noUser>
+              <div style="color: #888">No hay datos de usuario.</div>
+            </ng-template>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <!-- Apartado Gastos -->
+      <div *ngIf="selectedSection === 'expenses'">
+        <mat-card class="gastos-card">
+          <mat-card-title>Gastos</mat-card-title>
+          <mat-card-content>
+            <div class="table-responsive" *ngIf="expenses.length">
+              <table class="gastos-table">
+                <thead>
+                  <tr>
+                    <th><mat-icon>event</mat-icon> Fecha</th>
+                    <th><mat-icon>category</mat-icon> Categoría</th>
+                    <th><mat-icon>attach_money</mat-icon> Monto</th>
+                    <th><mat-icon>description</mat-icon> Descripción</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let gasto of expenses">
+                    <td>{{ gasto.fecha }}</td>
+                    <td>{{ gasto.categoria }}</td>
+                    <td>
+                      <span class="monto">${{ gasto.monto }}</span>
+                    </td>
+                    <td>{{ gasto.descripcion }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div *ngIf="!expenses.length" class="no-gastos">No hay gastos registrados.</div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      <!-- Apartado Resumen -->
+      <div *ngIf="selectedSection === 'summary'">
+        <mat-card class="summary-card">
+          <mat-card-title>Resumen de Gastos</mat-card-title>
+          <mat-card-content>
+            <div><strong>Total Gastado:</strong> ${{ resumen.totalGastado }}</div>
+            <div><strong>Número de Transacciones:</strong> {{ resumen.numTransacciones }}</div>
+            <div><strong>Promedio por Día:</strong> ${{ resumen.promedioDia }}</div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

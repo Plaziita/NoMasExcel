@@ -1,3 +1,4 @@
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
 body {
   background: linear-gradient(135deg, #0d47a1, #1976d2);
   overflow: hidden;

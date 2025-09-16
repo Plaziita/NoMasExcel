@@ -44,6 +44,9 @@
     </button>
 
     <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+    <div class="popup-success" *ngIf="showPopup">
+      <span>¡Logeado con éxito!</span>
+    </div>
     <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
   </div>
 </div>

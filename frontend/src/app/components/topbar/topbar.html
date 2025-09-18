@@ -2,11 +2,11 @@
   <div class="topbar-left">NoMasExcel</div>
 
   <div class="topbar-center">
-    Bienvenido, <span class="username">{{ name }}</span>
+    Bienvenido, <span class="username">{{ (user$ | async)?.name || '' }}</span>
   </div>
 
   <div class="topbar-right">
-    <div class="datetime">{{ timeString }}</div>
+    <div class="datetime">{{ time$ | async }}</div>
     <button
       mat-icon-button
       aria-label="Toggle theme"

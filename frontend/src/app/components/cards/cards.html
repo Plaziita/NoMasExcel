@@ -47,7 +47,9 @@
 
       <ng-container matColumnDef="userName">
         <mat-header-cell *matHeaderCellDef> Usuario </mat-header-cell>
-        <mat-cell *matCellDef="let card"> {{ getUserName(card.userId) }} </mat-cell>
+        <mat-cell *matCellDef="let card">
+          {{ card.userName || getUserName(card.userId) }}
+        </mat-cell>
       </ng-container>
 
       <ng-container matColumnDef="actions">

@@ -90,6 +90,7 @@ public class authController {
                 User user = userOpt.get();
                 return Map.of(
                     "authenticated", true,
+                    "id", user.getId(),
                     "email", user.getEmail(),
                     "name", user.getName(),
                     "rol", user.getRol()

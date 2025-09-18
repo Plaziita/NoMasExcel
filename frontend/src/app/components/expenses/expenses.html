@@ -1,14 +1,5 @@
 <mat-card class="gastos-card">
-  <mat-card-title>Gastos</mat-card-title>
   <mat-card-content>
-    <button
-      mat-raised-button
-      color="primary"
-      (click)="openAddExpense()"
-      style="margin-bottom: 18px"
-    >
-      Añadir gasto
-    </button>
     <!-- Modal/Popup para nuevo gasto -->
     <div class="modal-backdrop" *ngIf="showExpenseModal">
       <div class="modal-expense">
@@ -20,18 +11,27 @@
               {{ card.cardType }} - {{ card.cardNumber }}
             </option>
           </select>
-          <label>Fecha y hora:</label>
-          <input type="datetime-local" name="date" [(ngModel)]="newExpense.date" required />
+          <label>Fecha</label>
+          <input
+            matInput
+            name="date"
+            [(ngModel)]="newExpense.date"
+            [matDatepicker]="inlinePicker"
+            (focus)="inlinePicker.open()"
+            required
+          />
+          <mat-datepicker-toggle matSuffix [for]="inlinePicker"></mat-datepicker-toggle>
+          <mat-datepicker #inlinePicker></mat-datepicker>
           <label>Monto:</label>
           <input type="number" name="amount" [(ngModel)]="newExpense.amount" required min="0" />
           <label>Categoría:</label>
           <input type="text" name="category" [(ngModel)]="newExpense.category" required />
           <label>Descripción:</label>
           <input type="text" name="description" [(ngModel)]="newExpense.description" />
-          <!-- El estatus solo lo puede cambiar un ADMIN -->
-          <ng-container *ngIf="isAdmin">
-            <label>Estatus:</label>
-            <select name="status" [(ngModel)]="newExpense.status" required>
+          <!-- El estatus no se selecciona al crear; los ADMIN pueden cambiar el estatus solo al editar -->
+          <ng-container *ngIf="isAdmin && newExpense.id">
+            <label>Estatus (editar)</label>
+            <select name="status" [(ngModel)]="newExpense.status">
               <option value="pendiente">Pendiente</option>
               <option value="aprobado">Aprobado</option>
               <option value="rechazado">Rechazado</option>
@@ -53,206 +53,344 @@
         </form>
       </div>
     </div>
-    <!-- SOLO ADMIN VE LAS TABLAS DE TODOS LOS GASTOS -->
-    <ng-container *ngIf="isAdmin; else soloPendientesUsuario">
-      <!-- TABLA: Gastos Pendientes -->
-      <div class="table-responsive" *ngIf="pendingExpenses.length">
-        <h4>Gastos Pendientes</h4>
-        <div class="table-actions">
-          <button
-            mat-stroked-button
-            color="warn"
-            (click)="deleteSelected('pendiente')"
-            [disabled]="!selectedPending.length"
-          >
-            Eliminar seleccionados
-          </button>
-          <button
-            mat-stroked-button
-            color="accent"
-            (click)="editSelected('pendiente')"
-            [disabled]="selectedPending.length !== 1"
-          >
-            Editar seleccionado
-          </button>
+    <!-- Pendientes visible to all users; Aprobados/Rechazados only for admins -->
+    <mat-tab-group (selectedIndexChange)="onTabChange($event)">
+      <mat-tab label="Pendientes">
+        <div class="table-wrap">
+          <div class="table-header-row">
+            <button
+              mat-raised-button
+              class="primary-btn"
+              (click)="openAddExpense()"
+              style="margin-bottom: 18px"
+            >
+              Añadir gasto
+            </button>
+          </div>
+          <div class="table-scroll" [style.maxHeight.px]="computeMaxHeight(pageSizePending)">
+            <div class="table-actions">
+              <button
+                mat-stroked-button
+                color="warn"
+                (click)="deleteSelected('pendiente')"
+                [disabled]="!selectedPending.length"
+              >
+                Eliminar seleccionados
+              </button>
+              <button
+                mat-stroked-button
+                color="accent"
+                (click)="editSelected('pendiente')"
+                [disabled]="selectedPending.length !== 1"
+              >
+                Editar seleccionado
+              </button>
+            </div>
+
+            <mat-table
+              #sortPending="matSort"
+              [dataSource]="pendingDataSource"
+              class="mat-elevation-z8 modern-table"
+              matSort
+            >
+              <ng-container matColumnDef="select">
+                <mat-header-cell *matHeaderCellDef>
+                  <mat-checkbox
+                    [checked]="allPendingSelected()"
+                    (change)="toggleAll('pendiente', $event)"
+                  ></mat-checkbox>
+                </mat-header-cell>
+                <mat-cell *matCellDef="let gasto">
+                  <mat-checkbox
+                    [checked]="selectedPending.includes(gasto.id)"
+                    (change)="toggleSelect('pendiente', gasto.id, $event)"
+                  ></mat-checkbox>
+                </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="date">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> Fecha </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.date | date : 'shortDate' }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="userName">
+                <mat-header-cell *matHeaderCellDef> Usuario </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.userName }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="category">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> Categoría </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.category }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="amount">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> Monto </mat-header-cell>
+                <mat-cell *matCellDef="let gasto">
+                  <span class="monto">${{ gasto.amount }}</span>
+                </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="description">
+                <mat-header-cell *matHeaderCellDef> Descripción </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.description }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="actions">
+                <mat-header-cell *matHeaderCellDef> Acciones </mat-header-cell>
+                <mat-cell *matCellDef="let gasto">
+                  <button mat-icon-button color="accent" (click)="openEditById(gasto.id)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" (click)="deleteSingle(gasto.id)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </mat-cell>
+              </ng-container>
+
+              <mat-header-row
+                *matHeaderRowDef="displayedColumnsPending"
+                class="table-header"
+              ></mat-header-row>
+              <mat-row
+                *matRowDef="let row; columns: displayedColumnsPending"
+                class="table-row"
+              ></mat-row>
+            </mat-table>
+
+            <mat-paginator
+              #paginatorPending
+              [pageSizeOptions]="pageSizeOptions"
+              [pageSize]="pageSizePending"
+              showFirstLastButtons
+              (page)="onPageEvent($event, 'pendiente')"
+            ></mat-paginator>
+
+            <ng-container *ngIf="!pendingExpenses.length"
+              ><tr class="empty-row">
+                <td colspan="7">No hay registros</td>
+              </tr></ng-container
+            >
+          </div>
         </div>
-        <table class="gastos-table">
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  [checked]="allPendingSelected()"
-                  (change)="toggleAll('pendiente', $event)"
-                />
-              </th>
-              <th><mat-icon>event</mat-icon> Fecha</th>
-              <th><mat-icon>category</mat-icon> Categoría</th>
-              <th><mat-icon>attach_money</mat-icon> Monto</th>
-              <th><mat-icon>description</mat-icon> Descripción</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let gasto of pendingExpenses">
-              <td>
-                <input
-                  type="checkbox"
-                  [checked]="selectedPending.includes(gasto.id)"
-                  (change)="toggleSelect('pendiente', gasto.id, $event)"
-                />
-              </td>
-              <td>{{ gasto.date | date : 'short' }}</td>
-              <td>{{ gasto.category }}</td>
-              <td>
-                <span class="monto">${{ gasto.amount }}</span>
-              </td>
-              <td>{{ gasto.description }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div *ngIf="!pendingExpenses.length" class="no-gastos">No hay gastos pendientes.</div>
-      <!-- TABLA: Gastos Aprobados -->
-      <div class="table-responsive" *ngIf="approvedExpenses.length">
-        <h4>Gastos Aprobados</h4>
-        <div class="table-actions">
-          <button
-            mat-stroked-button
-            color="warn"
-            (click)="deleteSelected('aprobado')"
-            [disabled]="!selectedApproved.length"
-          >
-            Eliminar seleccionados
-          </button>
-          <button
-            mat-stroked-button
-            color="accent"
-            (click)="editSelected('aprobado')"
-            [disabled]="selectedApproved.length !== 1"
-          >
-            Editar seleccionado
-          </button>
+      </mat-tab>
+
+      <mat-tab *ngIf="isAdmin" label="Aprobados">
+        <div class="table-wrap">
+          <div class="table-header-row"></div>
+          <div class="table-scroll" [style.maxHeight.px]="computeMaxHeight(pageSizeApproved)">
+            <div class="table-actions">
+              <button
+                mat-stroked-button
+                color="warn"
+                (click)="deleteSelected('aprobado')"
+                [disabled]="!selectedApproved.length"
+              >
+                Eliminar seleccionados
+              </button>
+              <button
+                mat-stroked-button
+                color="accent"
+                (click)="editSelected('aprobado')"
+                [disabled]="selectedApproved.length !== 1"
+              >
+                Editar seleccionado
+              </button>
+            </div>
+
+            <mat-table
+              #sortApproved="matSort"
+              [dataSource]="approvedDataSource"
+              class="mat-elevation-z8 modern-table"
+              matSort
+            >
+              <ng-container matColumnDef="select">
+                <mat-header-cell *matHeaderCellDef>
+                  <mat-checkbox
+                    [checked]="allApprovedSelected()"
+                    (change)="toggleAll('aprobado', $event)"
+                  ></mat-checkbox>
+                </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"
+                  ><mat-checkbox
+                    [checked]="selectedApproved.includes(gasto.id)"
+                    (change)="toggleSelect('aprobado', gasto.id, $event)"
+                  ></mat-checkbox
+                ></mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="date">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> Fecha </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.date | date : 'shortDate' }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="userNameApproved">
+                <mat-header-cell *matHeaderCellDef> Usuario </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.userName }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="category">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> Categoría </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.category }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="amount">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> Monto </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"
+                  ><span class="monto">${{ gasto.amount }}</span></mat-cell
+                >
+              </ng-container>
+
+              <ng-container matColumnDef="description">
+                <mat-header-cell *matHeaderCellDef> Descripción </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.description }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="actions">
+                <mat-header-cell *matHeaderCellDef> Acciones </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"
+                  ><button mat-icon-button color="accent" (click)="openEditById(gasto.id)">
+                    <mat-icon>edit</mat-icon></button
+                  ><button mat-icon-button color="warn" (click)="deleteSingle(gasto.id)">
+                    <mat-icon>delete</mat-icon>
+                  </button></mat-cell
+                >
+              </ng-container>
+
+              <mat-header-row
+                *matHeaderRowDef="displayedColumnsApproved"
+                class="table-header"
+              ></mat-header-row>
+              <mat-row
+                *matRowDef="let row; columns: displayedColumnsApproved"
+                class="table-row"
+              ></mat-row>
+            </mat-table>
+
+            <mat-paginator
+              #paginatorApproved
+              [pageSizeOptions]="pageSizeOptions"
+              [pageSize]="pageSizeApproved"
+              showFirstLastButtons
+              (page)="onPageEvent($event, 'aprobado')"
+            ></mat-paginator>
+
+            <ng-container *ngIf="!approvedExpenses.length"
+              ><tr class="empty-row">
+                <td colspan="7">No hay registros</td>
+              </tr></ng-container
+            >
+          </div>
         </div>
-        <table class="gastos-table">
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  [checked]="allApprovedSelected()"
-                  (change)="toggleAll('aprobado', $event)"
-                />
-              </th>
-              <th><mat-icon>event</mat-icon> Fecha</th>
-              <th><mat-icon>category</mat-icon> Categoría</th>
-              <th><mat-icon>attach_money</mat-icon> Monto</th>
-              <th><mat-icon>description</mat-icon> Descripción</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let gasto of approvedExpenses">
-              <td>
-                <input
-                  type="checkbox"
-                  [checked]="selectedApproved.includes(gasto.id)"
-                  (change)="toggleSelect('aprobado', gasto.id, $event)"
-                />
-              </td>
-              <td>{{ gasto.date | date : 'short' }}</td>
-              <td>{{ gasto.category }}</td>
-              <td>
-                <span class="monto">${{ gasto.amount }}</span>
-              </td>
-              <td>{{ gasto.description }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div *ngIf="!approvedExpenses.length" class="no-gastos">No hay gastos aprobados.</div>
-      <!-- TABLA: Gastos Rechazados -->
-      <div class="table-responsive" *ngIf="rejectedExpenses.length">
-        <h4>Gastos Rechazados</h4>
-        <div class="table-actions">
-          <button
-            mat-stroked-button
-            color="warn"
-            (click)="deleteSelected('rechazado')"
-            [disabled]="!selectedRejected.length"
-          >
-            Eliminar seleccionados
-          </button>
-          <button
-            mat-stroked-button
-            color="accent"
-            (click)="editSelected('rechazado')"
-            [disabled]="selectedRejected.length !== 1"
-          >
-            Editar seleccionado
-          </button>
+      </mat-tab>
+
+      <mat-tab *ngIf="isAdmin" label="Rechazados">
+        <div class="table-wrap">
+          <div class="table-header-row"></div>
+          <div class="table-scroll" [style.maxHeight.px]="computeMaxHeight(pageSizeRejected)">
+            <div class="table-actions">
+              <button
+                mat-stroked-button
+                color="warn"
+                (click)="deleteSelected('rechazado')"
+                [disabled]="!selectedRejected.length"
+              >
+                Eliminar seleccionados
+              </button>
+              <button
+                mat-stroked-button
+                color="accent"
+                (click)="editSelected('rechazado')"
+                [disabled]="selectedRejected.length !== 1"
+              >
+                Editar seleccionado
+              </button>
+            </div>
+
+            <mat-table
+              #sortRejected="matSort"
+              [dataSource]="rejectedDataSource"
+              class="mat-elevation-z8 modern-table"
+              matSort
+            >
+              <ng-container matColumnDef="select">
+                <mat-header-cell *matHeaderCellDef>
+                  <mat-checkbox
+                    [checked]="allRejectedSelected()"
+                    (change)="toggleAll('rechazado', $event)"
+                  ></mat-checkbox>
+                </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"
+                  ><mat-checkbox
+                    [checked]="selectedRejected.includes(gasto.id)"
+                    (change)="toggleSelect('rechazado', gasto.id, $event)"
+                  ></mat-checkbox
+                ></mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="date">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> Fecha </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.date | date : 'shortDate' }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="userNameRejected">
+                <mat-header-cell *matHeaderCellDef> Usuario </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.userName }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="category">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> Categoría </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.category }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="amount">
+                <mat-header-cell *matHeaderCellDef mat-sort-header> Monto </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"
+                  ><span class="monto">${{ gasto.amount }}</span></mat-cell
+                >
+              </ng-container>
+
+              <ng-container matColumnDef="description">
+                <mat-header-cell *matHeaderCellDef> Descripción </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"> {{ gasto.description }} </mat-cell>
+              </ng-container>
+
+              <ng-container matColumnDef="actions">
+                <mat-header-cell *matHeaderCellDef> Acciones </mat-header-cell>
+                <mat-cell *matCellDef="let gasto"
+                  ><button mat-icon-button color="accent" (click)="openEditById(gasto.id)">
+                    <mat-icon>edit</mat-icon></button
+                  ><button mat-icon-button color="warn" (click)="deleteSingle(gasto.id)">
+                    <mat-icon>delete</mat-icon>
+                  </button></mat-cell
+                >
+              </ng-container>
+
+              <mat-header-row
+                *matHeaderRowDef="displayedColumnsRejected"
+                class="table-header"
+              ></mat-header-row>
+              <mat-row
+                *matRowDef="let row; columns: displayedColumnsRejected"
+                class="table-row"
+              ></mat-row>
+            </mat-table>
+
+            <mat-paginator
+              #paginatorRejected
+              [pageSizeOptions]="pageSizeOptions"
+              [pageSize]="pageSizeRejected"
+              showFirstLastButtons
+              (page)="onPageEvent($event, 'rechazado')"
+            ></mat-paginator>
+
+            <ng-container *ngIf="!rejectedExpenses.length"
+              ><tr class="empty-row">
+                <td colspan="7">No hay registros</td>
+              </tr></ng-container
+            >
+          </div>
         </div>
-        <table class="gastos-table">
-          <thead>
-            <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  [checked]="allRejectedSelected()"
-                  (change)="toggleAll('rechazado', $event)"
-                />
-              </th>
-              <th><mat-icon>event</mat-icon> Fecha</th>
-              <th><mat-icon>category</mat-icon> Categoría</th>
-              <th><mat-icon>attach_money</mat-icon> Monto</th>
-              <th><mat-icon>description</mat-icon> Descripción</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let gasto of rejectedExpenses">
-              <td>
-                <input
-                  type="checkbox"
-                  [checked]="selectedRejected.includes(gasto.id)"
-                  (change)="toggleSelect('rechazado', gasto.id, $event)"
-                />
-              </td>
-              <td>{{ gasto.date | date : 'short' }}</td>
-              <td>{{ gasto.category }}</td>
-              <td>
-                <span class="monto">${{ gasto.amount }}</span>
-              </td>
-              <td>{{ gasto.description }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div *ngIf="!rejectedExpenses.length" class="no-gastos">No hay gastos rechazados.</div>
-    </ng-container>
-    <!-- SOLO USUARIO: ver solo sus gastos pendientes -->
-    <ng-template #soloPendientesUsuario>
-      <div class="table-responsive" *ngIf="pendingExpenses.length">
-        <h4>Mis Gastos Pendientes</h4>
-        <table class="gastos-table">
-          <thead>
-            <tr>
-              <th><mat-icon>event</mat-icon> Fecha</th>
-              <th><mat-icon>category</mat-icon> Categoría</th>
-              <th><mat-icon>attach_money</mat-icon> Monto</th>
-              <th><mat-icon>description</mat-icon> Descripción</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let gasto of pendingExpenses">
-              <td>{{ gasto.date | date : 'short' }}</td>
-              <td>{{ gasto.category }}</td>
-              <td>
-                <span class="monto">${{ gasto.amount }}</span>
-              </td>
-              <td>{{ gasto.description }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div *ngIf="!pendingExpenses.length" class="no-gastos">No tienes gastos pendientes.</div>
-    </ng-template>
+      </mat-tab>
+    </mat-tab-group>
   </mat-card-content>
 </mat-card>

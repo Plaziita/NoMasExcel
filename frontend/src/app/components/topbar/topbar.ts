@@ -1,6 +1,6 @@
-import { Component, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { UserService } from '../../services/userService/user';
-import { Subscription } from 'rxjs';
+import { Subscription, Observable, interval, map, startWith } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,10 +15,9 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
   styleUrls: ['./topbar.css'],
 })
 export class Topbar implements OnDestroy {
-  name: string = '';
-  private userSub?: Subscription;
-  timeString: string = '';
-  private timerId: any;
+  // expose the session observable and bind with async pipe in the template
+  user$: Observable<any> | null = null;
+  time$: Observable<string>;
   isDark = false;
 
   private logoutSub?: Subscription;
@@ -26,25 +25,20 @@ export class Topbar implements OnDestroy {
   constructor(
     private userService: UserService,
     private router: Router,
-    private snack: MatSnackBar,
-    private cdr: ChangeDetectorRef
+    private snack: MatSnackBar
   ) {
-    this.updateTime();
-    this.timerId = setInterval(() => this.updateTime(), 1000);
-    this.userSub = this.userService.checkSession().subscribe((u: any) => {
-      this.name = u?.name || '';
-    });
+    this.time$ = interval(1000).pipe(
+      startWith(0),
+      map(() => new Date().toLocaleString())
+    );
+    // initialize the session observable after services are available
+    this.user$ = this.userService.checkSession();
     // initialize theme from localStorage
     try {
       const stored = localStorage.getItem('nomasexcel-theme');
       this.isDark = stored === 'dark';
       this.applyTheme();
     } catch (e) {}
-  }
-
-  updateTime() {
-    const now = new Date();
-    this.timeString = now.toLocaleString();
   }
 
   onLogout() {
@@ -69,7 +63,7 @@ export class Topbar implements OnDestroy {
       localStorage.setItem('nomasexcel-theme', this.isDark ? 'dark' : 'light');
     } catch (e) {}
     this.applyTheme();
-    this.cdr.detectChanges?.();
+    // no manual detectChanges needed
   }
 
   private applyTheme() {
@@ -82,8 +76,7 @@ export class Topbar implements OnDestroy {
   }
 
   ngOnDestroy() {
-    if (this.timerId) clearInterval(this.timerId);
-    if (this.userSub) this.userSub.unsubscribe();
+    // timerId cleanup not needed
     if (this.logoutSub) this.logoutSub.unsubscribe();
   }
 }

@@ -67,78 +67,101 @@ export class Cards implements OnInit {
 
   ngOnInit() {
     this.refreshCards();
-    this.loadUsers();
   }
 
   public refreshCards() {
     this.loadingSubject.next(true);
     this.cardService
       .getAllCards()
-      .pipe(
-        catchError(() => of([] as Card[])),
-        finalize(() => this.loadingSubject.next(false))
-      )
-      .subscribe((cards: Card[]) => this.cardsSubject.next(cards));
-  }
-
-  private loadUsers() {
-    this.userService
-      .getAllUsers()
-      .pipe(
-        catchError((err) => {
-          this.userErrorSubject.next(
-            'No se pudieron cargar los usuarios (' + (err?.status || '') + ')'
-          );
-          return of([] as User[]);
-        })
-      )
-      .subscribe((users: User[]) => this.usersSubject.next(users));
+      .pipe(catchError(() => of([] as Card[])))
+      .subscribe((cards: Card[]) => {
+        this.cardsSubject.next(cards);
+        // Cargar usuarios relacionados en lote y mantener el spinner hasta que terminen
+        const userIds = Array.from(new Set(cards.map((c) => c.userId).filter(Boolean)));
+        if (userIds.length) {
+          this.userService
+            .getUsersByIds(userIds)
+            .pipe(
+              catchError((err) => {
+                this.userErrorSubject.next(
+                  'No se pudieron cargar los usuarios (' + (err?.status || '') + ')'
+                );
+                return of([] as User[]);
+              })
+            )
+            .subscribe({
+              next: (users: User[]) => {
+                this.usersSubject.next(users);
+                this.loadingSubject.next(false);
+              },
+              error: () => {
+                // en caso raro, ocultar spinner y dejar mensaje ya seteado por catchError
+                this.loadingSubject.next(false);
+              },
+            });
+        } else {
+          this.usersSubject.next([]);
+          this.loadingSubject.next(false);
+        }
+      });
   }
 
   getUserName(userId: string | undefined): string {
     if (!userId) return '-';
     const users = this.usersSubject.value;
     const user = users.find((u) => u.id === userId);
-    if (user) return user.name;
-    // if not in local list, fetch by id and add for future lookups
-    this.userService
-      .getUserById(userId)
-      .pipe(catchError(() => of(null)))
-      .subscribe((u) => {
-        if (u) {
-          const list = this.usersSubject.value.slice();
-          list.push(u as User);
-          this.usersSubject.next(list);
-        }
-      });
-    return '-';
+    return user ? user.name : '-';
   }
 
   openAddCard() {
-    const dialogRef = this.dialog.open(CardsDialog, {
-      width: '520px',
-      data: { mode: 'add', users: this.usersSubject.value },
-    });
+    const ensureAndOpen = (users: User[]) => {
+      const dialogRef = this.dialog.open(CardsDialog, {
+        width: '520px',
+        data: { mode: 'add', users },
+      });
 
-    dialogRef.afterClosed().subscribe((result) => {
-      if (!result) return;
-      this.newCard = result;
-      this.addCard();
-    });
+      dialogRef.afterClosed().subscribe((result) => {
+        if (!result) return;
+        this.newCard = result;
+        this.addCard();
+      });
+    };
+
+    // Always fetch the full users list when opening the dialog so the selector
+    // shows every user (instead of reusing a possibly filtered usersSubject
+    // that was populated only with users referenced by existing cards).
+    this.userService
+      .getAllUsers()
+      .pipe(catchError(() => of([] as User[])))
+      .subscribe((users) => {
+        this.usersSubject.next(users);
+        ensureAndOpen(users);
+      });
   }
 
   openEditCard(card: Card) {
-    const dialogRef = this.dialog.open(CardsDialog, {
-      width: '520px',
-      data: { mode: 'edit', card: card, users: this.usersSubject.value },
-    });
+    const ensureAndOpen = (users: User[]) => {
+      const dialogRef = this.dialog.open(CardsDialog, {
+        width: '520px',
+        data: { mode: 'edit', card: card, users },
+      });
 
-    dialogRef.afterClosed().subscribe((result) => {
-      if (!result) return;
-      this.newCard = result;
-      this.editingCardId = card.id;
-      this.saveEditCard();
-    });
+      dialogRef.afterClosed().subscribe((result) => {
+        if (!result) return;
+        this.newCard = result;
+        this.editingCardId = card.id;
+        this.saveEditCard();
+      });
+    };
+
+    // Always fetch full user list for the edit dialog too
+    this.userService
+      .getAllUsers()
+      .pipe(catchError(() => of([] as User[])))
+      .subscribe((users) => {
+        this.usersSubject.next(users);
+        ensureAndOpen(users);
+      });
   }
 
   closeCardModal() {

@@ -1,0 +1,14 @@
+/* Minimal dialog styles matching CardsDialog */
+.dialog-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.mat-field-grid {
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .dialog-form {
+    grid-template-columns: 1fr;
+  }
+}

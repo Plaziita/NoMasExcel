@@ -4,6 +4,7 @@ export interface Expense {
   id: string;
   cardId: string;
   date: string;
+  userName?: string;
   amount: number;
   category: string;
   description?: string;

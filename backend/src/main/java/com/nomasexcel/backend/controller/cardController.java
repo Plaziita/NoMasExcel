@@ -3,6 +3,7 @@ package com.nomasexcel.backend.controller;
 
 import com.nomasexcel.backend.model.Card;
 import com.nomasexcel.backend.model.User;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.nomasexcel.backend.repository.cardRepository;
 import com.nomasexcel.backend.repository.userRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ public class cardController {
     private userRepository userRepo;
 
 
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCard(@PathVariable String id) {
         cardRepo.deleteById(id);
@@ -27,8 +29,47 @@ public class cardController {
     }
 
     @GetMapping
-    public List<Card> getAllCards() {
-        return cardRepo.findAll();
+    public List<com.nomasexcel.backend.model.CardDTO> getAllCards() {
+        List<Card> cards = cardRepo.findAll();
+        // determine authenticated user and role
+        String principalEmail = null;
+        try {
+            Object principal = SecurityContextHolder.getContext().getAuthentication() != null
+                    ? SecurityContextHolder.getContext().getAuthentication().getPrincipal()
+                    : null;
+            if (principal instanceof String) principalEmail = (String) principal;
+        } catch (Exception ex) {
+            // ignore
+        }
+        boolean isAdmin = false;
+        String userId = null;
+        if (principalEmail != null) {
+            java.util.Optional<User> uopt = userRepo.findByEmail(principalEmail);
+            if (uopt.isPresent()) {
+                User u = uopt.get();
+                isAdmin = u.getRol() != null && u.getRol().toString().equals("ADMIN");
+                userId = u.getId();
+            }
+        }
+        List<com.nomasexcel.backend.model.CardDTO> out = new java.util.ArrayList<>();
+        for (Card c : cards) {
+            // if not admin, only include cards owned by the current user
+            if (!isAdmin && userId != null) {
+                if (c.getUserId() == null || !userId.equals(c.getUserId())) continue;
+            }
+            String userName = null;
+            if (c.getUserId() != null) {
+                java.util.Optional<User> uopt = userRepo.findById(c.getUserId());
+                if (uopt.isPresent()) userName = uopt.get().getName();
+            }
+            int spLimit = (int) Math.round(c.getSpendingLimit());
+            Integer spLimitInt = Integer.valueOf(spLimit);
+            com.nomasexcel.backend.model.CardDTO dto = new com.nomasexcel.backend.model.CardDTO(
+                c.getId(), c.getCardNumber(), c.getCardType(), c.getCardHolder(), spLimitInt, c.getUserId(), userName
+            );
+            out.add(dto);
+        }
+        return out;
     }
 
     @PostMapping

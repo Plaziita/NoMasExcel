@@ -4,5 +4,6 @@ export interface Card {
   cardType: string;
   spendingLimit: number;
   userId: string;
+  userName?: string;
   cardHolder: string;
 }

@@ -36,8 +36,19 @@ export class UserService {
     return this.http.put<User>(`${this.baseUrl}/${id}`, userData, { withCredentials: true });
   }
 
-  deleteUser(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`, { withCredentials: true });
+  deleteUser(id: string): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.baseUrl}/${id}`, {
+      withCredentials: true,
+    });
+  }
+
+  /**
+   * Obtiene varios usuarios por sus ids en una sola petición (optimización para tablas).
+   * @param ids array de ids de usuario
+   */
+  getUsersByIds(ids: string[]): Observable<User[]> {
+    const params = ids.length ? `?ids=${ids.join(',')}` : '';
+    return this.http.get<User[]>(`${this.baseUrl}${params}`, { withCredentials: true });
   }
 
   checkSession(): Observable<any> {

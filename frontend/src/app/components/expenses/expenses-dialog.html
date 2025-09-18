@@ -1,0 +1,73 @@
+<div class="dialog-root">
+  <h2 class="mat-dialog-title">
+    {{ data.mode === 'edit' ? 'Editar Gasto' : 'Añadir Gasto' }}
+  </h2>
+  <div mat-dialog-content>
+    <form #form="ngForm" class="dialog-form">
+      <mat-form-field appearance="outline" class="mat-field-grid">
+        <mat-label>Tarjeta</mat-label>
+        <mat-select name="cardId" [(ngModel)]="dataModel.cardId" required>
+          <mat-option *ngFor="let c of data.cards" [value]="c.id"
+            >{{ c.cardType }} - {{ c.cardNumber }}</mat-option
+          >
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mat-field-grid">
+        <mat-label>Fecha</mat-label>
+        <input
+          matInput
+          name="date"
+          [(ngModel)]="dataModel.date"
+          [matDatepicker]="dialogPicker"
+          (focus)="dialogPicker.open()"
+          required
+        />
+        <mat-datepicker-toggle matSuffix [for]="dialogPicker"></mat-datepicker-toggle>
+        <mat-datepicker #dialogPicker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mat-field-grid">
+        <mat-label>Monto</mat-label>
+        <input matInput name="amount" [(ngModel)]="dataModel.amount" type="number" required />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mat-field-grid">
+        <mat-label>Categoría</mat-label>
+        <input matInput name="category" [(ngModel)]="dataModel.category" required />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mat-field-grid">
+        <mat-label>Descripción</mat-label>
+        <input matInput name="description" [(ngModel)]="dataModel.description" />
+      </mat-form-field>
+
+      <ng-container *ngIf="data.isAdmin && data.mode === 'edit'">
+        <mat-form-field appearance="outline" class="mat-field-grid">
+          <mat-label>Estatus</mat-label>
+          <mat-select name="status" [(ngModel)]="dataModel.status">
+            <mat-option value="pendiente">Pendiente</mat-option>
+            <mat-option value="aprobado">Aprobado</mat-option>
+            <mat-option value="rechazado">Rechazado</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </ng-container>
+
+      <mat-form-field appearance="outline" class="mat-field-grid">
+        <mat-label>Ticket (PDF)</mat-label>
+        <input
+          matInput
+          name="pdfUrl"
+          [(ngModel)]="dataModel.pdfUrl"
+          placeholder="Nombre de archivo o URL"
+        />
+      </mat-form-field>
+    </form>
+  </div>
+  <div mat-dialog-actions align="end">
+    <button mat-button (click)="cancel()">Cancelar</button>
+    <button mat-raised-button color="primary" (click)="submit()">
+      {{ data.mode === 'edit' ? 'Guardar' : 'Agregar' }}
+    </button>
+  </div>
+</div>

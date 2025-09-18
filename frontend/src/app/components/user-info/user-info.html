@@ -1,0 +1,13 @@
+<mat-card>
+  <mat-card-title>Datos del Usuario</mat-card-title>
+  <mat-card-content>
+    <ng-container *ngIf="user; else noUser">
+      <div><strong>Nombre:</strong> {{ user.name }}</div>
+      <div><strong>Email:</strong> {{ user.email }}</div>
+      <div><strong>Rol:</strong> {{ user.rol }}</div>
+    </ng-container>
+    <ng-template #noUser>
+      <div style="color: #888">No hay datos de usuario.</div>
+    </ng-template>
+  </mat-card-content>
+</mat-card>

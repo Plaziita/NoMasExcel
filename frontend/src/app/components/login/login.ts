@@ -1,5 +1,4 @@
-// src/app/components/login/login.component.ts
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService } from '../../services/userService/user';
@@ -13,6 +12,20 @@ import { Role, User } from '../../models/User';
   styleUrl: './login.css',
 })
 export class LoginComponent implements OnInit {
+  authForm!: FormGroup;
+  isLoginMode = true;
+  popupMessage: string | null = null;
+  popupType: 'success' | 'error' | 'info' = 'success';
+
+  constructor(
+    private fb: FormBuilder,
+    private userService: UserService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.initForm();
+  }
+
   ngOnInit(): void {
     this.userService.checkSession().subscribe({
       next: (res) => {
@@ -22,16 +35,6 @@ export class LoginComponent implements OnInit {
       },
       error: () => {},
     });
-  }
-  authForm!: FormGroup;
-  isLoginMode = true;
-  successMessage = '';
-  errorMessage = '';
-
-  showPopup = false;
-
-  constructor(private fb: FormBuilder, private userService: UserService, private router: Router) {
-    this.initForm();
   }
 
   private initForm() {
@@ -44,34 +47,41 @@ export class LoginComponent implements OnInit {
 
   toggleMode() {
     this.isLoginMode = !this.isLoginMode;
+
+    const nameCtrl = this.authForm.get('name');
+    const emailCtrl = this.authForm.get('email');
+    const passwordCtrl = this.authForm.get('password');
+
     if (this.isLoginMode) {
-      this.authForm.get('name')?.clearValidators();
-      this.authForm.get('email')?.clearValidators();
+      nameCtrl?.clearValidators();
+      emailCtrl?.clearValidators();
     } else {
-      this.authForm.get('name')?.setValidators(Validators.required);
-      this.authForm.get('email')?.setValidators([Validators.required, Validators.email]);
+      nameCtrl?.setValidators(Validators.required);
+      emailCtrl?.setValidators([Validators.required, Validators.email]);
     }
-    this.authForm.get('name')?.updateValueAndValidity();
-    this.authForm.get('email')?.updateValueAndValidity();
+
+    [nameCtrl, emailCtrl, passwordCtrl].forEach((ctrl) => {
+      ctrl?.updateValueAndValidity();
+      ctrl?.markAsUntouched();
+      ctrl?.markAsPristine();
+    });
   }
 
   onSubmit() {
-    this.successMessage = '';
-    this.errorMessage = '';
+    this.popupMessage = null;
 
     if (this.authForm.invalid) return;
 
     const formValue = this.authForm.value;
 
     if (this.isLoginMode) {
-      // Login
       this.userService.login(formValue).subscribe({
-        next: (user) => {
-          // Guardar bandera de login exitoso para mostrar popup en home
-          localStorage.setItem('showLoginPopup', '1');
-          this.router.navigate(['/home']);
+        next: () => {
+          this.showPopupMessage('¡Logeado con éxito!', 1500, 'success', '/home');
         },
-        error: (err) => (this.errorMessage = 'Usuario o contraseña incorrectos'),
+        error: () => {
+          this.showPopupMessage('Usuario o contraseña incorrectos', 2000, 'error');
+        },
       });
     } else {
       const newUser: User = {
@@ -82,9 +92,52 @@ export class LoginComponent implements OnInit {
       };
 
       this.userService.register(newUser).subscribe({
-        next: (user) => (this.successMessage = `Usuario ${user.name} registrado con éxito`),
-        error: (err) => (this.errorMessage = 'Error registrando usuario'),
+        next: (res: any) => {
+          if (res && res.error) {
+            if (res.error.includes('email')) {
+              this.showPopupMessage('Ya existe un usuario con ese email', 2500, 'error');
+            } else {
+              this.showPopupMessage('Error registrando usuario', 2500, 'error');
+            }
+          } else if (res && res.user) {
+            this.showPopupMessage(
+              `Usuario ${res.user.name} registrado con éxito`,
+              2000,
+              'success',
+              '/home'
+            );
+          } else {
+            this.showPopupMessage('Respuesta inesperada del servidor', 2500, 'error');
+          }
+        },
+        error: (err) => {
+          if (err?.error?.error && err.error.error.includes('email')) {
+            this.showPopupMessage('Ya existe un usuario con ese email', 2500, 'error');
+          } else {
+            this.showPopupMessage('Error registrando usuario', 2500, 'error');
+          }
+        },
       });
     }
+  }
+
+  showPopupMessage(
+    message: string,
+    duration = 2000,
+    type: 'success' | 'error' | 'info' = 'info',
+    redirectUrl?: string
+  ) {
+    this.popupMessage = message;
+    this.popupType = type;
+    this.cdr.detectChanges?.();
+    setTimeout(() => {
+      this.popupMessage = null;
+      this.cdr.detectChanges?.();
+      if (redirectUrl) {
+        setTimeout(() => {
+          this.router.navigate([redirectUrl]);
+        }, 200);
+      }
+    }, duration);
   }
 }

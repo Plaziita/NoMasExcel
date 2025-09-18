@@ -1,0 +1,36 @@
+<div class="dialog-root">
+  <h2 class="mat-dialog-title">
+    {{ data.mode === 'edit' ? 'Editar Tarjeta' : 'Agregar Tarjeta' }}
+  </h2>
+  <div mat-dialog-content>
+    <form #form="ngForm" class="dialog-form">
+      <mat-form-field appearance="outline" class="mat-field-grid">
+        <mat-label>Número de Tarjeta</mat-label>
+        <input matInput name="cardNumber" [(ngModel)]="dataModel.cardNumber" required />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mat-field-grid">
+        <mat-label>Tipo</mat-label>
+        <input matInput name="cardType" [(ngModel)]="dataModel.cardType" required />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mat-field-grid">
+        <mat-label>Titular</mat-label>
+        <input matInput name="cardHolder" [(ngModel)]="dataModel.cardHolder" required />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="mat-field-grid">
+        <mat-label>Usuario</mat-label>
+        <mat-select name="userName" [(ngModel)]="dataModel.userName">
+          <mat-option *ngFor="let u of data.users" [value]="u.name">{{ u.name }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </form>
+  </div>
+  <div mat-dialog-actions align="end">
+    <button mat-button (click)="cancel()">Cancelar</button>
+    <button mat-raised-button color="primary" (click)="submit()">
+      {{ data.mode === 'edit' ? 'Guardar' : 'Agregar' }}
+    </button>
+  </div>
+</div>

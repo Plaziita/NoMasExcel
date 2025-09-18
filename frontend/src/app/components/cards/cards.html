@@ -1,0 +1,78 @@
+<div class="cards-section">
+  <!-- Header with title and actions -->
+  <div class="cards-header">
+    <div class="cards-toolbar">
+      <button
+        mat-raised-button
+        class="primary-btn"
+        (click)="openAddCard()"
+        [disabled]="loading$ | async"
+      >
+        <mat-icon>add</mat-icon>
+        &nbsp;Añadir Tarjeta
+      </button>
+      <button mat-stroked-button color="primary" (click)="onImport()" aria-label="Importar">
+        <mat-icon>file_download</mat-icon>
+        &nbsp;Importar
+      </button>
+      <button mat-stroked-button color="primary" (click)="onExport()" aria-label="Exportar">
+        <mat-icon>file_upload</mat-icon>
+        &nbsp;Exportar
+      </button>
+    </div>
+  </div>
+
+  <!-- Mostrar la tabla aunque esté vacía -->
+  <div class="table-wrap">
+    <mat-progress-spinner
+      *ngIf="loading$ | async"
+      mode="indeterminate"
+      diameter="40"
+    ></mat-progress-spinner>
+    <mat-table [dataSource]="(cards$ | async) || []" class="mat-elevation-z8 modern-table">
+      <ng-container matColumnDef="cardNumber">
+        <mat-header-cell *matHeaderCellDef> Número </mat-header-cell>
+        <mat-cell *matCellDef="let card"> {{ card.cardNumber }} </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="cardType">
+        <mat-header-cell *matHeaderCellDef> Tipo </mat-header-cell>
+        <mat-cell *matCellDef="let card"> {{ card.cardType }} </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="cardHolder">
+        <mat-header-cell *matHeaderCellDef> Titular </mat-header-cell>
+        <mat-cell *matCellDef="let card"> {{ card.cardHolder }} </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="userName">
+        <mat-header-cell *matHeaderCellDef> Usuario </mat-header-cell>
+        <mat-cell *matCellDef="let card"> {{ getUserName(card.userId) }} </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <mat-header-cell *matHeaderCellDef> Acciones </mat-header-cell>
+        <mat-cell *matCellDef="let card">
+          <button mat-icon-button color="accent" (click)="openEditCard(card)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="deleteCard(card)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="displayedColumns" class="table-header"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: displayedColumns" class="table-row"></mat-row>
+    </mat-table>
+
+    <!-- Mensaje vacío -->
+    <div *ngIf="!(loading$ | async) && (cards$ | async)?.length === 0" class="empty-state">
+      No hay tarjetas registradas.
+    </div>
+  </div>
+
+  <div *ngIf="userError$ | async as userErr" class="error-message">{{ userErr }}</div>
+
+  <!-- Formulario ahora en un MatDialog (CardsDialog) -->
+</div>

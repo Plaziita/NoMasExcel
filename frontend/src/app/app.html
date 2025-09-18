@@ -1,1 +1,11 @@
-<router-outlet></router-outlet>
+<ng-container *ngIf="showShell">
+  <app-topbar></app-topbar>
+</ng-container>
+
+<main class="app-main">
+  <router-outlet></router-outlet>
+</main>
+
+<ng-container *ngIf="showShell">
+  <app-footer></app-footer>
+</ng-container>

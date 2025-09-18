@@ -1,0 +1,109 @@
+/* Styles scoped to CardsDialog component */
+.dialog-root {
+  display: block;
+  font-family: Inter, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.mat-dialog-title {
+  margin: 0;
+  padding: 18px 20px;
+  background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%); /* blue gradient */
+  color: #ffffff; /* white title text for contrast */
+  font-weight: 700;
+  border-bottom: 1px solid rgba(3, 105, 161, 0.12);
+  text-align: center; /* center the title */
+}
+
+.mat-dialog-content {
+  padding: 18px 20px 22px 20px;
+  background: #ffffff; /* keep content white for form readability */
+}
+
+.dialog-form {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2 columns */
+  gap: 18px 16px; /* vertical and horizontal gaps */
+  align-items: start;
+}
+
+/* Ensure each mat-form-field fills its grid cell */
+.dialog-form .mat-form-field {
+  width: 100%;
+}
+
+.mat-field-grid {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* For forms with full-width elements (if any), allow spanning both columns */
+.dialog-form .full-span {
+  grid-column: 1 / -1;
+}
+
+.mat-form-field {
+  width: 100%;
+}
+
+.mat-form-field .mat-form-field-outline {
+  border-radius: 8px;
+}
+
+.mat-form-field .mat-input-element {
+  padding: 10px 8px;
+}
+
+/* Make the action buttons area look like a subtle footer */
+.mat-dialog-actions {
+  padding: 12px 20px 18px 20px;
+  background: #fbfdff;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.mat-dialog-actions button[mat-raised-button] {
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 10px;
+}
+
+.mat-dialog-actions button[mat-button] {
+  color: rgba(2, 6, 23, 0.75);
+}
+
+/* Centered Add button variant (for the header CTA when shown inline) */
+.cards-header-centered {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.cards-header-centered .primary-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(6, 182, 212, 0.12);
+}
+
+@media (max-width: 480px) {
+  .mat-dialog-title {
+    padding: 14px 16px;
+  }
+  .mat-dialog-content {
+    padding: 12px 16px;
+  }
+  .dialog-root {
+    width: calc(100vw - 24px);
+  }
+}
+
+/* Responsive: single column on small/medium screens */
+@media (max-width: 720px) {
+  .dialog-form {
+    grid-template-columns: 1fr; /* stack fields */
+  }
+  .dialog-form .full-span {
+    grid-column: 1 / -1;
+  }
+}

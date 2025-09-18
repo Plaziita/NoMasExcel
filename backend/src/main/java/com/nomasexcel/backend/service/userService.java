@@ -23,6 +23,10 @@ public class userService {
     }
 
     public User register(User user) {
+        // Evitar duplicados por email
+        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
+            throw new RuntimeException("Ya existe un usuario con ese email");
+        }
         return userRepository.save(user);
     }
     public Optional<User> findByEmail(String email) {

@@ -49,8 +49,12 @@ public class authController {
 
     @PostMapping("/register")
     public Map<String, Object> register(@RequestBody User user) {
-        User newUser = userService.register(user);
-        return Map.of("message", "Usuario registrado", "user", newUser);
+        try {
+            User newUser = userService.register(user);
+            return Map.of("message", "Usuario registrado", "user", newUser);
+        } catch (RuntimeException e) {
+            return Map.of("error", e.getMessage());
+        }
     }
 
     @PostMapping("/logout")

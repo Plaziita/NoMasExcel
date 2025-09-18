@@ -1,0 +1,52 @@
+<div class="users-section">
+  <div class="users-header">
+    <div class="users-toolbar">
+      <button mat-raised-button class="primary-btn" (click)="openAddUser()">
+        <mat-icon>add</mat-icon> &nbsp;Crear Usuario
+      </button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <mat-progress-spinner
+      *ngIf="loading$ | async"
+      mode="indeterminate"
+      diameter="40"
+    ></mat-progress-spinner>
+    <mat-table [dataSource]="(users$ | async) || []" class="mat-elevation-z8 modern-table">
+      <ng-container matColumnDef="name">
+        <mat-header-cell *matHeaderCellDef> Nombre </mat-header-cell>
+        <mat-cell *matCellDef="let u"> {{ u.name }} </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <mat-header-cell *matHeaderCellDef> Email </mat-header-cell>
+        <mat-cell *matCellDef="let u"> {{ u.email }} </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="rol">
+        <mat-header-cell *matHeaderCellDef> Rol </mat-header-cell>
+        <mat-cell *matCellDef="let u"> {{ u.rol }} </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <mat-header-cell *matHeaderCellDef> Acciones </mat-header-cell>
+        <mat-cell *matCellDef="let u">
+          <button mat-icon-button color="accent" (click)="openEditUser(u)">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="deleteUser(u)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="displayedColumns" class="table-header"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: displayedColumns" class="table-row"></mat-row>
+    </mat-table>
+
+    <div *ngIf="!(loading$ | async) && (users$ | async)?.length === 0" class="empty-state">
+      No hay usuarios registrados.
+    </div>
+  </div>
+</div>

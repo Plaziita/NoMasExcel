@@ -1,0 +1,258 @@
+<mat-card class="gastos-card">
+  <mat-card-title>Gastos</mat-card-title>
+  <mat-card-content>
+    <button
+      mat-raised-button
+      color="primary"
+      (click)="openAddExpense()"
+      style="margin-bottom: 18px"
+    >
+      Añadir gasto
+    </button>
+    <!-- Modal/Popup para nuevo gasto -->
+    <div class="modal-backdrop" *ngIf="showExpenseModal">
+      <div class="modal-expense">
+        <h3>Nuevo Gasto</h3>
+        <form (ngSubmit)="addExpense()" #expenseForm="ngForm">
+          <label>Tarjeta:</label>
+          <select name="cardId" [(ngModel)]="newExpense.cardId" required>
+            <option *ngFor="let card of cards" [value]="card.id">
+              {{ card.cardType }} - {{ card.cardNumber }}
+            </option>
+          </select>
+          <label>Fecha y hora:</label>
+          <input type="datetime-local" name="date" [(ngModel)]="newExpense.date" required />
+          <label>Monto:</label>
+          <input type="number" name="amount" [(ngModel)]="newExpense.amount" required min="0" />
+          <label>Categoría:</label>
+          <input type="text" name="category" [(ngModel)]="newExpense.category" required />
+          <label>Descripción:</label>
+          <input type="text" name="description" [(ngModel)]="newExpense.description" />
+          <!-- El estatus solo lo puede cambiar un ADMIN -->
+          <ng-container *ngIf="isAdmin">
+            <label>Estatus:</label>
+            <select name="status" [(ngModel)]="newExpense.status" required>
+              <option value="pendiente">Pendiente</option>
+              <option value="aprobado">Aprobado</option>
+              <option value="rechazado">Rechazado</option>
+            </select>
+          </ng-container>
+          <label>Ticket (PDF):</label>
+          <input type="file" name="pdf" (change)="onPdfSelected($event)" accept="application/pdf" />
+          <div class="modal-actions">
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              [disabled]="!expenseForm.form.valid"
+            >
+              Guardar
+            </button>
+            <button mat-button type="button" (click)="closeExpenseModal()">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <!-- SOLO ADMIN VE LAS TABLAS DE TODOS LOS GASTOS -->
+    <ng-container *ngIf="isAdmin; else soloPendientesUsuario">
+      <!-- TABLA: Gastos Pendientes -->
+      <div class="table-responsive" *ngIf="pendingExpenses.length">
+        <h4>Gastos Pendientes</h4>
+        <div class="table-actions">
+          <button
+            mat-stroked-button
+            color="warn"
+            (click)="deleteSelected('pendiente')"
+            [disabled]="!selectedPending.length"
+          >
+            Eliminar seleccionados
+          </button>
+          <button
+            mat-stroked-button
+            color="accent"
+            (click)="editSelected('pendiente')"
+            [disabled]="selectedPending.length !== 1"
+          >
+            Editar seleccionado
+          </button>
+        </div>
+        <table class="gastos-table">
+          <thead>
+            <tr>
+              <th>
+                <input
+                  type="checkbox"
+                  [checked]="allPendingSelected()"
+                  (change)="toggleAll('pendiente', $event)"
+                />
+              </th>
+              <th><mat-icon>event</mat-icon> Fecha</th>
+              <th><mat-icon>category</mat-icon> Categoría</th>
+              <th><mat-icon>attach_money</mat-icon> Monto</th>
+              <th><mat-icon>description</mat-icon> Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let gasto of pendingExpenses">
+              <td>
+                <input
+                  type="checkbox"
+                  [checked]="selectedPending.includes(gasto.id)"
+                  (change)="toggleSelect('pendiente', gasto.id, $event)"
+                />
+              </td>
+              <td>{{ gasto.date | date : 'short' }}</td>
+              <td>{{ gasto.category }}</td>
+              <td>
+                <span class="monto">${{ gasto.amount }}</span>
+              </td>
+              <td>{{ gasto.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!pendingExpenses.length" class="no-gastos">No hay gastos pendientes.</div>
+      <!-- TABLA: Gastos Aprobados -->
+      <div class="table-responsive" *ngIf="approvedExpenses.length">
+        <h4>Gastos Aprobados</h4>
+        <div class="table-actions">
+          <button
+            mat-stroked-button
+            color="warn"
+            (click)="deleteSelected('aprobado')"
+            [disabled]="!selectedApproved.length"
+          >
+            Eliminar seleccionados
+          </button>
+          <button
+            mat-stroked-button
+            color="accent"
+            (click)="editSelected('aprobado')"
+            [disabled]="selectedApproved.length !== 1"
+          >
+            Editar seleccionado
+          </button>
+        </div>
+        <table class="gastos-table">
+          <thead>
+            <tr>
+              <th>
+                <input
+                  type="checkbox"
+                  [checked]="allApprovedSelected()"
+                  (change)="toggleAll('aprobado', $event)"
+                />
+              </th>
+              <th><mat-icon>event</mat-icon> Fecha</th>
+              <th><mat-icon>category</mat-icon> Categoría</th>
+              <th><mat-icon>attach_money</mat-icon> Monto</th>
+              <th><mat-icon>description</mat-icon> Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let gasto of approvedExpenses">
+              <td>
+                <input
+                  type="checkbox"
+                  [checked]="selectedApproved.includes(gasto.id)"
+                  (change)="toggleSelect('aprobado', gasto.id, $event)"
+                />
+              </td>
+              <td>{{ gasto.date | date : 'short' }}</td>
+              <td>{{ gasto.category }}</td>
+              <td>
+                <span class="monto">${{ gasto.amount }}</span>
+              </td>
+              <td>{{ gasto.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!approvedExpenses.length" class="no-gastos">No hay gastos aprobados.</div>
+      <!-- TABLA: Gastos Rechazados -->
+      <div class="table-responsive" *ngIf="rejectedExpenses.length">
+        <h4>Gastos Rechazados</h4>
+        <div class="table-actions">
+          <button
+            mat-stroked-button
+            color="warn"
+            (click)="deleteSelected('rechazado')"
+            [disabled]="!selectedRejected.length"
+          >
+            Eliminar seleccionados
+          </button>
+          <button
+            mat-stroked-button
+            color="accent"
+            (click)="editSelected('rechazado')"
+            [disabled]="selectedRejected.length !== 1"
+          >
+            Editar seleccionado
+          </button>
+        </div>
+        <table class="gastos-table">
+          <thead>
+            <tr>
+              <th>
+                <input
+                  type="checkbox"
+                  [checked]="allRejectedSelected()"
+                  (change)="toggleAll('rechazado', $event)"
+                />
+              </th>
+              <th><mat-icon>event</mat-icon> Fecha</th>
+              <th><mat-icon>category</mat-icon> Categoría</th>
+              <th><mat-icon>attach_money</mat-icon> Monto</th>
+              <th><mat-icon>description</mat-icon> Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let gasto of rejectedExpenses">
+              <td>
+                <input
+                  type="checkbox"
+                  [checked]="selectedRejected.includes(gasto.id)"
+                  (change)="toggleSelect('rechazado', gasto.id, $event)"
+                />
+              </td>
+              <td>{{ gasto.date | date : 'short' }}</td>
+              <td>{{ gasto.category }}</td>
+              <td>
+                <span class="monto">${{ gasto.amount }}</span>
+              </td>
+              <td>{{ gasto.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!rejectedExpenses.length" class="no-gastos">No hay gastos rechazados.</div>
+    </ng-container>
+    <!-- SOLO USUARIO: ver solo sus gastos pendientes -->
+    <ng-template #soloPendientesUsuario>
+      <div class="table-responsive" *ngIf="pendingExpenses.length">
+        <h4>Mis Gastos Pendientes</h4>
+        <table class="gastos-table">
+          <thead>
+            <tr>
+              <th><mat-icon>event</mat-icon> Fecha</th>
+              <th><mat-icon>category</mat-icon> Categoría</th>
+              <th><mat-icon>attach_money</mat-icon> Monto</th>
+              <th><mat-icon>description</mat-icon> Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let gasto of pendingExpenses">
+              <td>{{ gasto.date | date : 'short' }}</td>
+              <td>{{ gasto.category }}</td>
+              <td>
+                <span class="monto">${{ gasto.amount }}</span>
+              </td>
+              <td>{{ gasto.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div *ngIf="!pendingExpenses.length" class="no-gastos">No tienes gastos pendientes.</div>
+    </ng-template>
+  </mat-card-content>
+</mat-card>

@@ -1,9 +1,12 @@
+<!-- Popup de notificación para registro/login -->
+<div *ngIf="popupMessage" class="popup-message" [ngClass]="popupType">
+  {{ popupMessage }}
+</div>
 <div class="login-container">
   <div class="login-box">
     <h2>{{ isLoginMode ? 'Iniciar Sesión' : 'Registro' }}</h2>
 
     <form [formGroup]="authForm" (ngSubmit)="onSubmit()">
-      <!-- Nombre solo en registro -->
       <div class="form-group" *ngIf="!isLoginMode">
         <label>Nombre</label>
         <input type="text" formControlName="name" />
@@ -12,7 +15,6 @@
         </div>
       </div>
 
-      <!-- Email solo en registro -->
       <div class="form-group">
         <label>Email</label>
         <input type="email" formControlName="email" />
@@ -21,7 +23,6 @@
         </div>
       </div>
 
-      <!-- Contraseña -->
       <div class="form-group">
         <label>Contraseña</label>
         <input type="password" formControlName="password" />
@@ -33,7 +34,6 @@
         </div>
       </div>
 
-      <!-- Botón enviar -->
       <button type="submit" [disabled]="authForm.invalid">
         {{ isLoginMode ? 'Iniciar Sesión' : 'Registrarse' }}
       </button>
@@ -43,10 +43,6 @@
       {{ isLoginMode ? '¿No tienes cuenta? Regístrate' : '¿Ya tienes cuenta? Iniciar sesión' }}
     </button>
 
-    <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
-    <div class="popup-success" *ngIf="showPopup">
-      <span>¡Logeado con éxito!</span>
-    </div>
-    <p class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+    <!-- Eliminado popup duplicado y mensajes legacy -->
   </div>
 </div>

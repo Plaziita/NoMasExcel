@@ -1,0 +1,12 @@
+.app-footer {
+  padding: 12px 16px;
+  text-align: center;
+  color: black;
+  font-size: 0.95rem;
+  background: linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%); /* blue gradient */
+}
+
+.footer-content {
+  max-width: 1100px;
+  margin: 0 auto;
+}

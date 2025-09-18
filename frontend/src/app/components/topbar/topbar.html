@@ -1,0 +1,22 @@
+<div class="topbar-root">
+  <div class="topbar-left">NoMasExcel</div>
+
+  <div class="topbar-center">
+    Bienvenido, <span class="username">{{ name }}</span>
+  </div>
+
+  <div class="topbar-right">
+    <div class="datetime">{{ timeString }}</div>
+    <button
+      mat-icon-button
+      aria-label="Toggle theme"
+      (click)="toggleTheme()"
+      [attr.aria-pressed]="isDark"
+    >
+      <mat-icon>{{ isDark ? 'dark_mode' : 'light_mode' }}</mat-icon>
+    </button>
+    <button mat-icon-button aria-label="Logout" (click)="onLogout()">
+      <mat-icon>logout</mat-icon>
+    </button>
+  </div>
+</div>

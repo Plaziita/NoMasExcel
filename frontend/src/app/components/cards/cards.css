@@ -1,0 +1,157 @@
+/* Modern card/table styles for Cards component */
+.cards-section {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 80vw;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cards-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cards-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.table-wrap {
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.06);
+  overflow: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+mat-table {
+  width: 100%;
+  --mat-elevation-z8: none;
+  display: block; /* ensure the table fills available width inside flexible containers */
+}
+
+mat-header-cell {
+  font-weight: 700;
+  color: rgba(2, 6, 23, 0.9);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+mat-cell {
+  color: rgba(2, 6, 23, 0.9);
+  font-size: 0.95rem;
+}
+
+/* modern table visuals */
+.modern-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.modern-table .mat-header-row.table-header {
+  /* subtle blue tone matching the page background */
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.06), rgba(6, 182, 212, 0.03));
+}
+
+.modern-table .mat-header-row.table-header .mat-header-cell {
+  color: rgba(2, 58, 86, 0.95); /* darker blue text */
+  padding: 12px 18px;
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.12), rgba(6, 182, 212, 0.08));
+  border-bottom: 1px solid rgba(14, 165, 233, 0.12);
+}
+
+.modern-table .mat-header-row.table-header .mat-header-cell .mat-icon,
+.modern-table .mat-header-row.table-header .mat-header-cell mat-icon {
+  color: rgba(2, 6, 23, 0.7);
+}
+
+.modern-table .mat-row.table-row {
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.modern-table .mat-row.table-row:nth-child(even) {
+  background: rgba(14, 165, 233, 0.03); /* subtle blue stripe */
+}
+
+.modern-table .mat-row.table-row:hover {
+  background: rgba(3, 105, 161, 0.06);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(3, 105, 161, 0.06);
+}
+
+.modern-table .mat-cell {
+  padding: 14px 20px;
+}
+
+.empty-state {
+  padding: 18px;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.action-buttons button[mat-icon-button] {
+  margin-left: 6px;
+}
+
+/* Dialog form tweaks */
+:host ::ng-deep .mat-dialog-container {
+  border-radius: 10px;
+  padding: 0;
+}
+
+.mat-dialog-title {
+  padding: 20px 24px;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.mat-dialog-content {
+  padding: 0 24px 20px 24px;
+}
+
+.mat-dialog-actions {
+  padding: 12px 24px 20px 24px;
+}
+
+.cards-toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.primary-btn {
+  background: linear-gradient(90deg, #3b82f6, #06b6d4);
+  color: white;
+}
+
+/* Dialog form specific */
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dialog-form .full {
+  width: 100%;
+}
+
+/* small responsive tweak */
+@media (max-width: 560px) {
+  .cards-title {
+    font-size: 1rem;
+  }
+  .cards-toolbar {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+}

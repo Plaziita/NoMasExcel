@@ -29,7 +29,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) // desactiva CSRF para API REST
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // permitir preflight CORS
-                .requestMatchers("/auth/login", "/auth/register").permitAll() // libre acceso
+                .requestMatchers("/auth/login", "/auth/register", "/auth/me").permitAll() // libre acceso
                 .anyRequest().authenticated() // todo lo demás requiere login
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

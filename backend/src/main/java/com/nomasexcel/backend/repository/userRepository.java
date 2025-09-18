@@ -7,4 +7,5 @@ import com.nomasexcel.backend.model.User;
 
 public interface userRepository extends MongoRepository<User, String> {
     Optional<User> findByEmail(String email);
+    User findByName(String name);
 }
